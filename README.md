@@ -1,29 +1,143 @@
+<div align="center">
+
 # Daraz MCP
 
-MCP server, typed Open Platform client, setup CLI, and hosted admin for Daraz sellers. Bangladesh (`api.daraz.com.bd`) is the default. Pakistan, Sri Lanka, Nepal, and Myanmar are the same client with a different region.
+Run a Daraz shop from Claude, Cursor, VS Code, or any MCP client.
 
-This project is **not affiliated with, endorsed by, or maintained by Daraz or Alibaba**. You need your own app key from [Daraz Open Platform](https://open.daraz.com/).
+[![CI](https://github.com/foisalislambd/daraz-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/foisalislambd/daraz-mcp/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![npm 0.1.0](https://img.shields.io/badge/npm-0.1.0-CB3837?logo=npm&logoColor=white)](packages/cli/package.json)
+[![Node.js](https://img.shields.io/badge/node-%3E%3D20-339933?logo=node.js&logoColor=white)](package.json)
 
-The hosted panel in `apps/web` is adapted from [ZenPanel](https://github.com/foisalislambd/zenpanel) (MIT, Copyright 2026 Foisal Islam). See `apps/web/VENDOR-LICENSE`.
+<img src="docs/images/dashboard.png" alt="Daraz MCP dashboard: sales, orders, low stock, and API usage" width="860">
 
-## What you get
+</div>
 
-- `@daraz-mcp/client` signs every call with HMAC-SHA256, refreshes tokens, and retries throttle and network errors.
-- `@daraz-mcp/mcp-server` exposes read tools and destructive write tools. Writes require `confirm: true`.
-- `daraz-mcp` is the CLI: `npx daraz-mcp setup`, then paste the printed config into Claude Desktop, Cursor, or VS Code.
-- `apps/web` is the multi-tenant panel: sign up, connect a shop, copy an MCP URL and API key, read usage, and see plan limits. Payments are not wired up.
+The screenshot is the admin panel with a seeded demo account. The chart is a labelled sample snapshot, not a live Daraz response.
 
-## Quick start (local)
+This project is **not affiliated with, endorsed by, or maintained by Daraz or Alibaba**. You need your own app key from the [Daraz Open Platform](https://open.daraz.com/).
 
-```bash
-pnpm install
-pnpm build
-npx daraz-mcp setup
+`daraz-mcp` is version **0.1.0** in this repository. It is not on the npm registry yet, so `npx daraz-mcp` will not resolve until it is published. Until then, build the CLI from a checkout (see [Self-host / local](#self-host--local-for-developers)).
+
+## Contents
+
+- [Features](#features)
+- [How it works](#how-it-works)
+- [Hosted (no install, for sellers)](#hosted-no-install-for-sellers)
+- [Self-host / local (for developers)](#self-host--local-for-developers)
+- [Daraz app key and secret](#daraz-app-key-and-secret)
+- [Client configuration](#client-configuration)
+- [Tools](#tools)
+- [Example prompts](#example-prompts)
+- [Environment variables](#environment-variables)
+- [Docker and deployment](#docker-and-deployment)
+- [Regions](#regions)
+- [Security](#security)
+- [FAQ](#faq)
+- [Roadmap](#roadmap)
+- [Contributing](#contributing)
+- [License and disclaimer](#license-and-disclaimer)
+
+## Features
+
+- Typed Daraz client: HMAC-SHA256 signing, OAuth, token refresh, retries on throttle and network errors.
+- MCP server on stdio and Streamable HTTP. Read tools are separate from write tools. Writes require `confirm: true`.
+- Local CLI (`daraz-mcp`): setup wizard, encrypted tokens, printed configs for Claude Desktop, Cursor, and VS Code.
+- Multi-tenant web panel: sign up, connect a shop, create and revoke API keys, copy an MCP URL, read usage, see plan limits. Card checkout is not connected.
+- Regions BD, PK, LK, NP, and MM. Bangladesh is the default.
+- SQLite by default, Postgres when `DATABASE_URL` starts with `postgres`.
+
+## How it works
+
+```mermaid
+flowchart LR
+  client["AI client"] --> mcp["MCP server"]
+  mcp --> daraz["Daraz Open Platform"]
+  panel["Hosted panel"] --> mcp
 ```
 
-The wizard asks for the region, app key, and app secret, opens the Daraz seller login, and stores tokens encrypted in `~/.config/daraz-mcp` (files mode `0600`).
+The client calls MCP tools. The server signs each REST call and sends it to the venture host (`https://api.daraz.com.bd/rest` for Bangladesh). The panel stores shops and API keys and serves the same MCP server at `POST /mcp`.
 
-Headless alternative, without the wizard:
+## Gallery
+
+| Dashboard | Shops |
+| --- | --- |
+| <img src="docs/images/dashboard.png" alt="Dashboard" width="420"> | <img src="docs/images/shops.png" alt="Shops" width="420"> |
+
+| API keys | Client setup |
+| --- | --- |
+| <img src="docs/images/keys.png" alt="API keys and MCP URL" width="420"> | <img src="docs/images/setup.png" alt="Client setup" width="420"> |
+
+| Usage | Billing |
+| --- | --- |
+| <img src="docs/images/usage.png" alt="Usage logs" width="420"> | <img src="docs/images/billing.png" alt="Billing placeholder" width="420"> |
+
+## Hosted (no install, for sellers)
+
+This repository does not run a public seller site. An operator deploys `apps/web` and gives you the URL. You do not install Node.
+
+1. Open the panel and create an account.
+2. On **Shops**, enter a label, region, and (unless the operator set a platform app) your Daraz app key and secret. Choose **Connect Daraz** and approve the seller login.
+3. Register the callback the form shows on your Daraz app: `https://YOUR_HOST/api/daraz/callback`.
+4. On **API keys**, create a key. The full key is shown once. Copy the MCP URL.
+5. Paste the URL and `Authorization: Bearer dk_live_...` into your AI client. Snippets are on **Client setup**.
+6. Ask a read question first (`list_shops`, `daily_sales_summary`). A write only runs when the tool call includes `confirm: true`.
+
+Plans enforced in the panel:
+
+| Plan | Shops | API keys | MCP calls / month | Price shown |
+| --- | ---: | ---: | ---: | ---: |
+| Free | 2 | 3 | 1,000 | $0 |
+| Pro | 10 | 20 | 50,000 | $29 |
+| Business | 50 | 100 | 500,000 | $99 |
+
+The billing page shows these caps. The upgrade button stays disabled. There is no payment provider.
+
+## Self-host / local (for developers)
+
+Node.js 20 or newer (CI uses 22). pnpm 10.15.1.
+
+1. Clone the repo and install.
+
+   ```bash
+   corepack enable
+   corepack prepare pnpm@10.15.1 --activate
+   pnpm install
+   pnpm build
+   ```
+
+2. Create a Daraz app and copy the key and secret. See [Daraz app key and secret](#daraz-app-key-and-secret).
+3. Run the wizard. It asks for region, app key, app secret, and a shop label, opens the seller login, and stores tokens with AES-256-GCM.
+
+   ```bash
+   node packages/cli/dist/cli.js setup
+   ```
+
+   Default redirect: `http://127.0.0.1:8787/callback`. Files land in `~/.config/daraz-mcp` (`master.key` and `credentials.enc`, mode `0600`), or in `DARAZ_MCP_HOME`.
+4. Check the install.
+
+   ```bash
+   node packages/cli/dist/cli.js doctor
+   node packages/cli/dist/cli.js shops
+   node packages/cli/dist/cli.js config
+   ```
+
+5. Point Claude Desktop, Cursor, or VS Code at the local server. See [Client configuration](#client-configuration).
+6. Optional: run the panel yourself.
+
+   ```bash
+   cp .env.example .env
+   # set TOKEN_ENCRYPTION_KEY before production
+   pnpm dev:web
+   ```
+
+   Open http://localhost:3000. Demo data for UI review only:
+
+   ```bash
+   SEED_DEMO=true DEMO_EMAIL=demo@daraz-mcp.local DEMO_PASSWORD=demo-password pnpm --filter @daraz-mcp/web dev
+   ```
+
+Headless, without the wizard (the process reads these instead of the encrypted file):
 
 ```bash
 export DARAZ_REGION=BD
@@ -31,10 +145,31 @@ export DARAZ_APP_KEY=...
 export DARAZ_APP_SECRET=...
 export DARAZ_ACCESS_TOKEN=...
 export DARAZ_REFRESH_TOKEN=...
-npx daraz-mcp serve
+node packages/cli/dist/cli.js serve
 ```
 
-Claude Desktop and Cursor:
+More detail: [docs/quickstart.md](docs/quickstart.md), [docs/deployment.md](docs/deployment.md).
+
+## Daraz app key and secret
+
+1. Sign in at https://open.daraz.com/.
+2. Create an application and copy the app key and app secret.
+3. Set the callback URL before you start OAuth.
+   - Local CLI: `http://127.0.0.1:8787/callback`
+   - Panel: `https://YOUR_HOST/api/daraz/callback` (or `http://localhost:3000/api/daraz/callback` for local dev)
+
+Authorize uses `response_type=code`, `force_auth=true`, `redirect_uri`, and `client_id` (the app key) on the venture host, for example `https://api.daraz.com.bd/oauth/authorize`. The CLI and panel exchange the code at `POST /auth/token/create`.
+
+If `DARAZ_APP_KEY` and `DARAZ_APP_SECRET` are set on the panel, sellers are not asked for their own key. That platform app is not stored per shop.
+
+## Client configuration
+
+After `daraz-mcp` is published, the command is `npx -y daraz-mcp`. The snippets below use that command. From a checkout, replace `npx` and the args with `node` and the path to `packages/cli/dist/cli.js`.
+
+<details>
+<summary>Claude Desktop and Cursor (local stdio)</summary>
+
+Claude Desktop: `claude_desktop_config.json`. Cursor: `~/.cursor/mcp.json`.
 
 ```json
 {
@@ -47,7 +182,12 @@ Claude Desktop and Cursor:
 }
 ```
 
-VS Code (`.vscode/mcp.json`):
+</details>
+
+<details>
+<summary>VS Code (local stdio)</summary>
+
+`.vscode/mcp.json`:
 
 ```json
 {
@@ -61,50 +201,237 @@ VS Code (`.vscode/mcp.json`):
 }
 ```
 
-## Hosted panel
+</details>
 
-```bash
-cp .env.example .env
-# set TOKEN_ENCRYPTION_KEY (32 bytes, base64) before production
-pnpm dev:web
+<details>
+<summary>Hosted Streamable HTTP (Claude Desktop and Cursor)</summary>
+
+Replace the URL and key. The panel prints the same JSON on **Client setup**.
+
+```json
+{
+  "mcpServers": {
+    "daraz": {
+      "url": "https://YOUR_HOST/mcp",
+      "headers": {
+        "Authorization": "Bearer dk_live_YOUR_KEY"
+      }
+    }
+  }
+}
 ```
 
-Open http://localhost:3000. SQLite is the default database. Set `DATABASE_URL=postgres://...` for Postgres. Both go through Drizzle.
+</details>
+
+<details>
+<summary>VS Code (hosted HTTP)</summary>
+
+```json
+{
+  "servers": {
+    "daraz": {
+      "type": "http",
+      "url": "https://YOUR_HOST/mcp",
+      "headers": {
+        "Authorization": "Bearer dk_live_YOUR_KEY"
+      }
+    }
+  }
+}
+```
+
+</details>
+
+<details>
+<summary>ChatGPT and other Streamable HTTP clients</summary>
+
+There is no ChatGPT-only config file. Clients that speak Streamable HTTP use the same hosted URL and bearer key as above (`POST /mcp`). A public HTTPS URL is required for a client that cannot reach your machine.
+
+Local HTTP, for a client on the same computer:
 
 ```bash
+export DARAZ_MCP_API_KEY=optional-shared-secret
+node packages/cli/dist/cli.js http
+```
+
+That listens on `http://127.0.0.1:8788/mcp` (`PORT` and `HOST` override this). If `DARAZ_MCP_API_KEY` is set, the request must send `Authorization: Bearer` with that value.
+
+</details>
+
+Add another shop by running setup again. When more than one shop is saved, pass the `shop` argument (id or label).
+
+## Tools
+
+Read tools do not change the shop. Write tools are annotated destructive and require `confirm: true`. `call_api` rejects unknown paths; a write through `call_api` still needs `confirm: true`.
+
+| Tool | Access | Confirm | What it does |
+| --- | --- | --- | --- |
+| `list_shops` | read | no | Connected shops, no secrets |
+| `list_api_catalog` | read | no | Paths and how each one was verified |
+| `get_seller` | read | no | `/seller/get` |
+| `get_orders` | read | no | `/orders/get` |
+| `get_order` | read | no | `/order/get` |
+| `get_order_items` | read | no | `/order/items/get` |
+| `get_products` | read | no | `/products/get` |
+| `get_product` | read | no | `/product/item/get` |
+| `get_category_tree` | read | no | `/category/tree/get` |
+| `get_category_attributes` | read | no | `/category/attributes/get` |
+| `query_brands` | read | no | `/category/brands/query` |
+| `get_finance` | read | no | Transactions or payout status |
+| `list_returns` | read | no | `/reverse/order/list` |
+| `list_reviews` | read | no | Unverified on Daraz |
+| `list_vouchers` | read | no | Unverified on Daraz |
+| `daily_sales_summary` | read | no | Today's orders and a price sum |
+| `low_stock_report` | read | no | SKUs at or under a threshold |
+| `pending_orders` | read | no | `pending` and `unpaid` in the last 14 days |
+| `update_price_quantity` | write | yes | `/product/price_quantity/update` |
+| `bulk_update_price_quantity_csv` | write | yes | CSV of price and stock, 50 SKUs per call |
+| `create_product` | write | yes | XML payload |
+| `update_product` | write | yes | XML payload |
+| `remove_product` | write | yes | Up to 50 seller SKUs |
+| `deactivate_product` | write | yes | `/product/deactivate` |
+| `upload_image` | write | yes | Base64 file to `/image/upload` |
+| `pack_order` | write | yes | `/order/pack` |
+| `ready_to_ship` | write | yes | `/order/rts` |
+| `cancel_order` | write | yes | `/order/cancel` |
+| `set_invoice_number` | write | yes | `/order/invoice_number/set` |
+| `voucher_action` | write | yes | Unverified voucher create, update, activate, or deactivate |
+| `call_api` | mixed | writes only | Any catalog path |
+
+Resources: `daraz://regions`, `daraz://shops`, `daraz://catalog`.
+
+Prompts: `morning-shop-brief`, `restock-plan`.
+
+CSV columns for bulk updates: `item_id`, `sku_id`, `seller_sku`, `quantity`, `price`, `sale_price`. At least one identity column is required.
+
+Some parameter names were not printed on the captured portal pages. A live call can return `E001`. See [docs/tools.md](docs/tools.md) and [docs/api-coverage.md](docs/api-coverage.md).
+
+## Example prompts
+
+These match the built-in prompts. They use read tools only until you confirm a write.
+
+- Morning brief: "Using only read tools, prepare a morning brief. Include daily sales, pending orders, and low stock. Use the shop currency. Do not change prices, stock, or orders."
+- Restock list: "Read the low-stock report with threshold 5. Propose new quantities. Do not call any write tool until I confirm."
+- Orders: "List pending orders that need action."
+- Catalog: "Show live products and flag SKUs with available stock under 5."
+
+## Environment variables
+
+Copy `.env.example`. Do not commit secrets.
+
+| Variable | Where | Purpose |
+| --- | --- | --- |
+| `TOKEN_ENCRYPTION_KEY` | Panel | 32 bytes, base64. Required in production. Encrypts Daraz tokens and app secrets. |
+| `PUBLIC_APP_URL` | Panel | Public origin, no path. OAuth redirect base. |
+| `COOKIE_SECURE` | Panel | `true` or `false`. In production the cookie is `Secure` when this is unset and the public URL is https or empty. Set `false` for a local production server on http. |
+| `DATABASE_URL` | Panel | `postgres://...` for Postgres. Omit for SQLite. |
+| `SQLITE_PATH` | Panel | SQLite file. Default `apps/web/data/daraz.sqlite` when the process cwd is `apps/web`. |
+| `PORT` / `HOST` | Panel or CLI `http` | Panel default `3000` / `0.0.0.0`. CLI HTTP default `8788` / `127.0.0.1`. |
+| `DARAZ_APP_KEY` / `DARAZ_APP_SECRET` | Panel or CLI | Platform app, or the headless shop credentials. |
+| `DARAZ_REGION` | CLI | `BD`, `PK`, `LK`, `NP`, or `MM`. |
+| `DARAZ_ACCESS_TOKEN` / `DARAZ_REFRESH_TOKEN` | CLI | Headless tokens. When set, the CLI does not use the encrypted file. |
+| `DARAZ_SHOP_ID` / `DARAZ_SHOP_LABEL` | CLI | Optional labels for the env shop. |
+| `DARAZ_MCP_HOME` | CLI | Config directory. Default `~/.config/daraz-mcp`. |
+| `DARAZ_MCP_API_KEY` | CLI `http` | Optional bearer secret for the local HTTP server. |
+| `SEED_DEMO` | Panel | `true` inserts a demo user and a sample dashboard. Leave unset in production. |
+| `DEMO_EMAIL` / `DEMO_PASSWORD` | Panel | Demo account. Defaults `demo@daraz-mcp.local` / `demo-password`. |
+| `NODE_ENV` | Panel | `production` requires `TOKEN_ENCRYPTION_KEY`. |
+
+Generate an encryption key:
+
+```bash
+node -e "console.log(require('node:crypto').randomBytes(32).toString('base64'))"
+```
+
+## Docker and deployment
+
+```bash
+export TOKEN_ENCRYPTION_KEY="$(node -e "console.log(require('node:crypto').randomBytes(32).toString('base64'))")"
 docker compose up --build
 ```
 
-The compose file includes a local-only encryption key default. Replace it before any real tokens are stored.
+Compose starts Postgres 16 and the web app on port 3000. `DATABASE_URL` is `postgres://daraz:daraz@postgres:5432/daraz`. If you omit `TOKEN_ENCRYPTION_KEY`, compose uses 32 zero bytes so the container can boot. Replace that key before any real token is stored.
 
-Seed a demo account for UI review:
+The process is `node --experimental-strip-types server.ts`. It boots Next.js and handles `/mcp` on the Node HTTP server. Responses are stateless JSON, so a proxy does not need sticky sessions.
 
-```bash
-SEED_DEMO=true DEMO_EMAIL=demo@daraz-mcp.local DEMO_PASSWORD=demo-password pnpm --filter @daraz-mcp/web dev
-```
+## Regions
 
-Hosted MCP is `POST /mcp` with `Authorization: Bearer dk_live_...`.
+| Code | Country | Currency | REST base | Authorize host |
+| --- | --- | --- | --- | --- |
+| `BD` | Bangladesh | BDT | `https://api.daraz.com.bd/rest` | `https://api.daraz.com.bd` |
+| `PK` | Pakistan | PKR | `https://api.daraz.pk/rest` | `https://api.daraz.pk` |
+| `LK` | Sri Lanka | LKR | `https://api.daraz.lk/rest` | `https://api.daraz.lk` |
+| `NP` | Nepal | NPR | `https://api.daraz.com.np/rest` | `https://api.daraz.com.np` |
+| `MM` | Myanmar | MMK | `https://api.shop.com.mm/rest` | `https://api.shop.com.mm` |
 
-## বাংলায় সংক্ষেপে
+`https://auth.daraz.com` is an optional central host (`host: "central"`). It was not in the official authorize samples this client follows.
 
-এই টুল দিয়ে দারাজ সেলাররা Claude, Cursor, বা VS Code থেকে দোকান দেখতে ও চালাতে পারবেন। প্রথমে বাংলাদেশ (`api.daraz.com.bd`)। পাকিস্তান, শ্রীলঙ্কা, নেপাল, এবং মিয়ানমার একই ক্লায়েন্টে region বদলালেই চলে।
+## Security
 
-১. [open.daraz.com](https://open.daraz.com/) থেকে app key ও secret নিন।  
-২. `npx daraz-mcp setup` চালান। ব্রাউজারে সেলার লগইন করলে টোকেন কম্পিউটারে এনক্রিপ্ট হয়ে থাকবে।  
-৩. উইজার্ড যে কনফিগ দেখায় সেটা Claude Desktop, Cursor, বা VS Code-এ বসান।  
-৪. পড়ার টুল আলাদা। দাম, স্টক, বা অর্ডার বদলাতে `confirm: true` লাগবে।
+- Local tokens: AES-256-GCM. The key file and ciphertext are mode `0600`. Anyone who can read both can decrypt them.
+- Panel tokens: the same cipher with `TOKEN_ENCRYPTION_KEY`. Losing the key makes stored tokens unreadable.
+- API keys are stored as SHA-256. The full key is shown once. Revoke it in the panel if it leaks.
+- Session cookies are random, HTTP-only, and stored as hashes. Passwords are scrypt.
+- Logs redact field names that look like tokens, secrets, or passwords.
+- OAuth `state` expires after 15 minutes.
+- Write tools change live seller data when `confirm` is true. Give keys only to clients you trust.
 
-এটি দারাজের অফিসিয়াল পণ্য নয়।
+Details: [SECURITY.md](SECURITY.md).
 
-## Docs
+## FAQ
 
-- [Quick start](docs/quickstart.md)
-- [Tool reference](docs/tools.md)
-- [API coverage and what was not verified](docs/api-coverage.md)
-- [Hosted deployment](docs/deployment.md)
-- [Security](SECURITY.md)
+<details>
+<summary>The browser login never returns to the CLI.</summary>
 
-## Development
+The Daraz app callback must be exactly `http://127.0.0.1:8787/callback` unless you typed a different redirect. The wizard listens on port 8787.
+
+</details>
+
+<details>
+<summary>A write tool did nothing.</summary>
+
+Writes require `confirm: true` in the tool arguments. The model should not set that until you ask it to change the shop.
+
+</details>
+
+<details>
+<summary>Daraz returns <code>E001</code> or a 404.</summary>
+
+Some finance, reverse-order, document, and voucher parameter names are shared Lazada-style names, not strings copied from an unread Daraz page. `list_reviews`, `list_vouchers`, and `voucher_action` are labelled unverified. See [docs/api-coverage.md](docs/api-coverage.md).
+
+</details>
+
+<details>
+<summary>Sign-in works, then the panel sends me back to login.</summary>
+
+In production the session cookie is `Secure` when `PUBLIC_APP_URL` is https or unset. On plain HTTP, set `COOKIE_SECURE=false` or an `http://` `PUBLIC_APP_URL`.
+
+</details>
+
+<details>
+<summary>Where is the database?</summary>
+
+SQLite at `SQLITE_PATH`, or `apps/web/data/daraz.sqlite` when that variable is unset. Set `DATABASE_URL` to a `postgres://` URL to use Postgres. Drizzle owns the schema, the migration, and the shop-count query. Other queries use bound SQL.
+
+</details>
+
+<details>
+<summary>Are webhooks supported?</summary>
+
+No. The server polls. There is no webhook receiver.
+
+</details>
+
+## Roadmap
+
+What the code already marks as unfinished:
+
+- Billing shows plan caps and prices. Checkout is not connected, and upgrades stay disabled.
+- Review and voucher paths are implemented and labelled unverified.
+- Free Shipping, Flexicombo, instant messaging, 3PV, wallet, multi-warehouse XML, and webhooks are not implemented.
+- `daraz-mcp` is prepared for npm with changesets. It is not published yet.
+
+## Contributing
 
 ```bash
 pnpm lint
@@ -113,4 +440,14 @@ pnpm test
 pnpm build
 ```
 
-Node.js 20 or newer. pnpm 10. Changesets live in `.changeset` for the publishable packages `daraz-mcp`, `@daraz-mcp/client`, and `@daraz-mcp/mcp-server`.
+Do not add a Daraz path unless you can point at a portal capture, an official document, or a client you have read. Do not commit `.env`, token files, or `data/`.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## License and disclaimer
+
+[MIT](LICENSE). Copyright (c) 2026 Foisal Islam.
+
+**Not affiliated with Daraz or Alibaba.** API paths that were not verified against a page we could read are listed in [docs/api-coverage.md](docs/api-coverage.md).
+
+The admin UI is adapted from [ZenPanel](https://github.com/foisalislambd/zenpanel) v2.1.3 (MIT, Copyright 2026 Foisal Islam). The license is in [apps/web/VENDOR-LICENSE](apps/web/VENDOR-LICENSE). The panel keeps ZenPanel's Next.js, Tailwind CSS, sidebar, and theme, and replaces the template pages with the Daraz screens above.
