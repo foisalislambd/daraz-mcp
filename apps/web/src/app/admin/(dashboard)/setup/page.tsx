@@ -58,12 +58,7 @@ export default function SetupPage() {
 
   return (
     <div className="admin-content space-y-5">
-      <div>
-        <h1 className="text-xl font-semibold text-gray-900 dark:text-white">Client setup</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Replace dk_live_YOUR_KEY with a key from API keys. The local command reads encrypted tokens from your computer.
-        </p>
-      </div>
+      <h1 className="text-xl font-semibold text-gray-900 dark:text-white">Client setup</h1>
       <div className="grid gap-4 lg:grid-cols-2">
         {cards.map((card) => (
           <div key={card.id} className="admin-card admin-card-body">

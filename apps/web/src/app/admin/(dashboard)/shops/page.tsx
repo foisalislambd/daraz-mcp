@@ -72,12 +72,7 @@ export default function ShopsPage() {
 
   return (
     <div className="admin-content space-y-5">
-      <div>
-        <h1 className="text-xl font-semibold text-gray-900 dark:text-white">Shops</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Each Daraz country is its own seller login. Bangladesh is the default. Pakistan, Sri Lanka, Nepal, and Myanmar use the same flow.
-        </p>
-      </div>
+      <h1 className="text-xl font-semibold text-gray-900 dark:text-white">Shops</h1>
       {notice && <p className="text-sm text-success-600">{notice}</p>}
       {error && <p className="text-sm text-error-500">{error}</p>}
 
