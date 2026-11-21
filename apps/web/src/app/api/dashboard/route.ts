@@ -1,5 +1,4 @@
 import { getDb, monthUsage } from "@/server/db";
-import { getPlan } from "@/server/plans";
 import { json, userFromRequest } from "@/server/session";
 
 export const dynamic = "force-dynamic";
@@ -10,19 +9,17 @@ export async function GET(request: Request) {
   const db = await getDb();
   const snapshot = await db.get("SELECT payload, source, updated_at FROM snapshots WHERE user_id = ?", [user.id]);
   const shops = await db.all("SELECT id, label, region, status FROM shops WHERE user_id = ?", [user.id]);
-  const plan = getPlan(user.plan);
   const used = await monthUsage(user.id);
   const payload = snapshot ? JSON.parse(String(snapshot.payload)) : emptyPayload();
   return json({
     source: snapshot ? snapshot.source : "empty",
     updatedAt: snapshot?.updated_at ?? null,
     currency: payload.currency || "BDT",
-    stats: { ...payload.stats, apiCallsMonth: used, apiLimit: plan.monthlyCalls, shops: shops.length },
+    stats: { ...payload.stats, apiCallsMonth: used, shops: shops.length },
     chart: payload.chart || [],
     orders: payload.orders || [],
     lowStock: payload.lowStock || [],
     shops,
-    plan,
   });
 }
 

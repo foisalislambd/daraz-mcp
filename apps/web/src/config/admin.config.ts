@@ -1,6 +1,5 @@
 import type { LucideIcon } from "lucide-react";
 import {
-  CreditCard,
   KeyRound,
   LayoutDashboard,
   ScrollText,
@@ -66,13 +65,6 @@ export const adminNavItems: AdminNavItem[] = [
     href: "/admin/usage",
     icon: ScrollText,
     description: "Filterable MCP call log",
-  },
-  {
-    name: "Billing",
-    section: "Account",
-    href: "/admin/billing",
-    icon: CreditCard,
-    description: "Plan limits. Payments are not wired yet.",
   },
   { name: "Settings", section: "Account", href: "/admin/settings", icon: Settings },
 ];

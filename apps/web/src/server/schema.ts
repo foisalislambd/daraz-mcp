@@ -7,7 +7,6 @@ export const users = sqliteTable("users", {
   email: text("email").notNull().unique(),
   name: text("name").notNull(),
   passwordHash: text("password_hash").notNull(),
-  plan: text("plan").notNull().default("free"),
   createdAt: integer("created_at").notNull(),
 });
 
@@ -79,7 +78,6 @@ export const pgUsers = pgTable("users", {
   email: pgText("email").notNull().unique(),
   name: pgText("name").notNull(),
   passwordHash: pgText("password_hash").notNull(),
-  plan: pgText("plan").notNull().default("free"),
   createdAt: pgInteger("created_at").notNull(),
 });
 

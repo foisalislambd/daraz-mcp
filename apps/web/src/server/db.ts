@@ -2,14 +2,11 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { createLogger, decryptString, encryptString, randomKey, sha256Hex } from "@daraz-mcp/client";
 import Database from "better-sqlite3";
-import { count, eq, sql } from "drizzle-orm";
-import { drizzle, type BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
+import { sql } from "drizzle-orm";
 import { drizzle as drizzlePg } from "drizzle-orm/node-postgres";
 import pg from "pg";
 import { MIGRATION_SQL } from "./migrate.sql.ts";
 import { hashPassword } from "./passwords.ts";
-import { getPlan } from "./plans.ts";
-import { schema, shops } from "./schema.ts";
 
 const log = createLogger({ component: "web" });
 
@@ -23,7 +20,6 @@ interface SqlClient {
 }
 
 let client: SqlClient | undefined;
-let sqliteOrm: BetterSQLite3Database<typeof schema> | undefined;
 let encryptionKey: Buffer | undefined;
 
 function databaseFile(): string {
@@ -96,7 +92,6 @@ export async function getDb(): Promise<SqlClient> {
   } else {
     const sqlite = new Database(databaseFile());
     sqlite.pragma("journal_mode = WAL");
-    sqliteOrm = drizzle(sqlite, { schema });
     await applySql((statement) => {
       sqlite.exec(statement);
     });
@@ -114,24 +109,26 @@ export async function getDb(): Promise<SqlClient> {
     };
     log.info({ dialect: "sqlite" }, "database ready");
   }
+  await dropPlanColumn(client);
   await seedIfRequested();
   return client;
+}
+
+/** Existing databases created before plans were removed still have users.plan. */
+async function dropPlanColumn(db: SqlClient) {
+  if (db.dialect === "postgres") {
+    await db.run("ALTER TABLE users DROP COLUMN IF EXISTS plan");
+    return;
+  }
+  const columns = await db.all("PRAGMA table_info(users)");
+  if (columns.some((column) => column.name === "plan")) {
+    await db.run("ALTER TABLE users DROP COLUMN plan");
+  }
 }
 
 function toPg(query: string): string {
   let index = 0;
   return query.replace(/\?/g, () => `$${++index}`);
-}
-
-/** Drizzle query used by the plan meter. SQLite only; Postgres uses the SQL client. */
-export async function countShopsForUser(userId: string): Promise<number> {
-  if (sqliteOrm) {
-    const row = sqliteOrm.select({ value: count() }).from(shops).where(eq(shops.userId, userId)).get();
-    return Number(row?.value ?? 0);
-  }
-  const db = await getDb();
-  const row = await db.get("SELECT COUNT(*) AS value FROM shops WHERE user_id = ?", [userId]);
-  return Number(row?.value ?? 0);
 }
 
 export async function seedIfRequested() {
@@ -145,8 +142,8 @@ export async function seedIfRequested() {
   const userId = "user_demo";
   const password = await hashPassword(process.env.DEMO_PASSWORD || "demo-password");
   await db.run(
-    "INSERT INTO users (id, email, name, password_hash, plan, created_at) VALUES (?, ?, ?, ?, ?, ?)",
-    [userId, email, "Demo Seller", password, "pro", now],
+    "INSERT INTO users (id, email, name, password_hash, created_at) VALUES (?, ?, ?, ?, ?)",
+    [userId, email, "Demo Seller", password, now],
   );
   await db.run(
     `INSERT INTO shops (id, user_id, label, region, seller_id, access_token_enc, refresh_token_enc, status, uses_platform_app, created_at)
@@ -229,27 +226,4 @@ export async function monthUsage(userId: string): Promise<number> {
     [userId, start.getTime()],
   );
   return Number(row?.value ?? 0);
-}
-
-export async function assertWithinPlan(userId: string, kind: "shops" | "keys" | "calls") {
-  const db = await getDb();
-  const user = await db.get("SELECT plan FROM users WHERE id = ?", [userId]);
-  const plan = getPlan(String(user?.plan ?? "free"));
-  if (kind === "shops") {
-    const countShops = await countShopsForUser(userId);
-    if (countShops >= plan.shops) {
-      throw new Error(`${plan.label} plan allows ${plan.shops} shops.`);
-    }
-  }
-  if (kind === "keys") {
-    const row = await db.get(
-      "SELECT COUNT(*) AS value FROM api_keys WHERE user_id = ? AND revoked_at IS NULL",
-      [userId],
-    );
-    if (Number(row?.value ?? 0) >= plan.keys) throw new Error(`${plan.label} plan allows ${plan.keys} API keys.`);
-  }
-  if (kind === "calls") {
-    const used = await monthUsage(userId);
-    if (used >= plan.monthlyCalls) throw new Error(`${plan.label} monthly call limit reached.`);
-  }
 }

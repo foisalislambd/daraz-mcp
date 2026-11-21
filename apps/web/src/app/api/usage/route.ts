@@ -1,5 +1,4 @@
 import { getDb, monthUsage } from "@/server/db";
-import { getPlan } from "@/server/plans";
 import { json, userFromRequest } from "@/server/session";
 
 export const dynamic = "force-dynamic";
@@ -23,9 +22,7 @@ export async function GET(request: Request) {
     `SELECT id, tool, ok, error_code, duration_ms, created_at, shop_id FROM usage_logs WHERE ${filters.join(" AND ")} ORDER BY created_at DESC LIMIT 200`,
     params,
   );
-  const plan = getPlan(user.plan);
   return json({
-    plan,
     used: await monthUsage(user.id),
     logs: rows.map((row) => ({
       id: row.id,

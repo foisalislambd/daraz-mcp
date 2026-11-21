@@ -29,9 +29,9 @@ docker compose up --build
 
 The web process listens on port 3000. MCP is `POST /mcp` with `Authorization: Bearer <api key>`.
 
-## Plans
+## Cost
 
-`free`, `pro`, and `business` cap shops, keys, and monthly MCP calls. The billing page shows the caps and a disabled upgrade button. There is no payment provider.
+The panel is free. There are no plans, prices, or caps on shops, API keys, or MCP calls. Usage logs record calls. They do not enforce a quota. Daraz may still return `E901` when a burst is too frequent; the client retries that.
 
 ## Process
 

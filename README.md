@@ -29,6 +29,7 @@ Paste this into ChatGPT, Claude, Cursor, or another assistant. It tells the assi
 You are helping me connect a Daraz seller shop to an AI client through the daraz-mcp project.
 Repository: https://github.com/foisalislambd/daraz-mcp
 This project is not affiliated with Daraz or Alibaba.
+Daraz MCP is free. There are no plans, prices, or usage caps.
 
 Do not invent API paths, hosts, or secrets. Do not write secrets into git, chat logs, or screenshots. Ask me to paste an app key, app secret, or API key only when a step needs it, and never echo the secret back in full.
 
@@ -93,10 +94,10 @@ If a call returns E001 or 404, say the path may be unverified and point me at do
 
 ## Features
 
-- Typed Daraz client: HMAC-SHA256 signing, OAuth, token refresh, retries on throttle and network errors.
+- Typed Daraz client: HMAC-SHA256 signing, OAuth, token refresh, and retries when Daraz returns throttle code E901 or the network fails. That retry is a technical safeguard. It is not a plan limit.
 - MCP server on stdio and Streamable HTTP. Read tools are separate from write tools. Writes require `confirm: true`.
 - Local CLI (`daraz-mcp`): setup wizard, encrypted tokens, printed configs for Claude Desktop, Cursor, and VS Code.
-- Multi-tenant web panel: sign up, connect a shop, create and revoke API keys, copy an MCP URL, read usage, see plan limits. Card checkout is not connected.
+- Multi-tenant web panel, free for every seller: sign up, connect a shop, create and revoke API keys, copy an MCP URL, and read usage logs. There are no plans, prices, or caps on shops, keys, or calls.
 - Regions BD, PK, LK, NP, and MM. Bangladesh is the default.
 - SQLite by default, Postgres when `DATABASE_URL` starts with `postgres`.
 
@@ -121,9 +122,9 @@ The client calls MCP tools. The server signs each REST call and sends it to the 
 | --- | --- |
 | <img src="docs/images/keys.png" alt="API keys and MCP URL" width="420"> | <img src="docs/images/setup.png" alt="Client setup" width="420"> |
 
-| Usage | Billing |
-| --- | --- |
-| <img src="docs/images/usage.png" alt="Usage logs" width="420"> | <img src="docs/images/billing.png" alt="Billing placeholder" width="420"> |
+| Usage |
+| --- |
+| <img src="docs/images/usage.png" alt="Usage logs" width="420"> |
 
 ## Hosted (no install, for sellers)
 
@@ -136,15 +137,7 @@ This repository does not run a public seller site. An operator deploys `apps/web
 5. Paste the URL and `Authorization: Bearer dk_live_...` into your AI client. Snippets are on **Client setup**.
 6. Ask a read question first (`list_shops`, `daily_sales_summary`). A write only runs when the tool call includes `confirm: true`.
 
-Plans enforced in the panel:
-
-| Plan | Shops | API keys | MCP calls / month | Price shown |
-| --- | ---: | ---: | ---: | ---: |
-| Free | 2 | 3 | 1,000 | $0 |
-| Pro | 10 | 20 | 50,000 | $29 |
-| Business | 50 | 100 | 500,000 | $99 |
-
-The billing page shows these caps. The upgrade button stays disabled. There is no payment provider.
+The panel is free. There are no plans and no limits on shops, API keys, or MCP calls. Usage is a log, not a quota. Daraz itself may throttle a burst with `E901`; the client backs off and retries.
 
 ## Self-host / local (for developers)
 
@@ -466,7 +459,7 @@ In production the session cookie is `Secure` when `PUBLIC_APP_URL` is https or u
 <details>
 <summary>Where is the database?</summary>
 
-SQLite at `SQLITE_PATH`, or `apps/web/data/daraz.sqlite` when that variable is unset. Set `DATABASE_URL` to a `postgres://` URL to use Postgres. Drizzle owns the schema, the migration, and the shop-count query. Other queries use bound SQL.
+SQLite at `SQLITE_PATH`, or `apps/web/data/daraz.sqlite` when that variable is unset. Set `DATABASE_URL` to a `postgres://` URL to use Postgres. Drizzle defines the schema. Startup SQL creates tables and drops a leftover `users.plan` column from older databases. Other queries use bound SQL.
 
 </details>
 
@@ -481,7 +474,6 @@ No. The server polls. There is no webhook receiver.
 
 What the code already marks as unfinished:
 
-- Billing shows plan caps and prices. Checkout is not connected, and upgrades stay disabled.
 - Review and voucher paths are implemented and labelled unverified.
 - Free Shipping, Flexicombo, instant messaging, 3PV, wallet, multi-warehouse XML, and webhooks are not implemented.
 - `daraz-mcp` is prepared for npm with changesets. It is not published yet.

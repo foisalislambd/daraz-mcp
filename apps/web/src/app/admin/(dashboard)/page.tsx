@@ -17,7 +17,6 @@ type Dashboard = {
     pendingOrders: number;
     lowStock: number;
     apiCallsMonth: number;
-    apiLimit: number;
     shops: number;
   };
   chart: { label: string; revenue: number; orders: number }[];
@@ -137,8 +136,8 @@ export default function AdminDashboardPage() {
           iconBg="bg-error-50 dark:bg-error-500/15"
         />
         <Stat
-          label="API usage"
-          value={`${data.stats.apiCallsMonth.toLocaleString()} / ${data.stats.apiLimit.toLocaleString()}`}
+          label="API calls"
+          value={data.stats.apiCallsMonth.toLocaleString()}
           icon={<ScrollText className="h-5 w-5 text-emerald-600" />}
           iconBg="bg-emerald-50 dark:bg-emerald-500/15"
         />
