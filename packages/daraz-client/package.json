@@ -1,0 +1,30 @@
+{
+  "name": "@daraz-mcp/client",
+  "version": "0.1.0",
+  "description": "Typed Daraz Open Platform client with HMAC-SHA256 signing, OAuth, and retries.",
+  "license": "MIT",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/foisalislambd/daraz-mcp.git",
+    "directory": "packages/daraz-client"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist", "README.md"],
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src test",
+    "test": "vitest run --config vitest.config.ts"
+  },
+  "devDependencies": {
+    "tsup": "^8.5.0",
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.4"
+  }
+}
