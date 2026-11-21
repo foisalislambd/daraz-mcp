@@ -1,7 +1,9 @@
 "use client";
 
 import { RevenueChart } from "@/components/admin/dashboard/revenue-chart";
+import { CopyForAiButton } from "@/components/admin/ui/copy-for-ai-button";
 import { AdminLoading } from "@/components/admin/ui/admin-loading";
+import Link from "next/link";
 import { formatCurrency } from "@/lib/format";
 import { AlertTriangle, Package, ScrollText, ShoppingCart, Store } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -54,9 +56,16 @@ function Stat({
 
 export default function AdminDashboardPage() {
   const [data, setData] = useState<Dashboard | null>(null);
+  const [mcpUrl, setMcpUrl] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    fetch("/api/keys")
+      .then((response) => (response.ok ? response.json() : null))
+      .then((body) => {
+        if (body?.mcpUrl) setMcpUrl(String(body.mcpUrl));
+      })
+      .catch(() => undefined);
     fetch("/api/dashboard")
       .then(async (response) => {
         if (!response.ok) throw new Error("Could not load the dashboard");
@@ -77,6 +86,30 @@ export default function AdminDashboardPage() {
         <h1 className="text-xl font-semibold text-gray-900 dark:text-white">Shop overview</h1>
         <span className="admin-chip w-fit">{data.shops.length} shop{data.shops.length === 1 ? "" : "s"}</span>
       </div>
+
+      {data.shops.length === 0 && (
+        <div className="admin-card admin-card-body">
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Connect a shop</h2>
+          <ol className="mt-3 list-decimal space-y-1 pl-5 text-sm text-gray-600 dark:text-gray-300">
+            <li>
+              <Link className="font-medium text-brand-600" href="/admin/shops">
+                Connect a Daraz country
+              </Link>{" "}
+              (Bangladesh, Pakistan, Sri Lanka, Nepal, or Myanmar).
+            </li>
+            <li>
+              <Link className="font-medium text-brand-600" href="/admin/keys">
+                Create an API key
+              </Link>{" "}
+              and copy the MCP URL.
+            </li>
+            <li>Paste the client config, or use Copy for AI and let an assistant finish setup.</li>
+          </ol>
+          <div className="mt-4">
+            <CopyForAiButton mcpUrl={mcpUrl} />
+          </div>
+        </div>
+      )}
 
       <div className="grid w-full grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-5">
         <Stat
