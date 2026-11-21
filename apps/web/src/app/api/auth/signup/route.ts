@@ -24,12 +24,11 @@ export async function POST(request: Request) {
     id: `user_${randomBytes(8).toString("hex")}`,
     email,
     name,
-    plan: "free",
     createdAt: Date.now(),
   };
   await db.run(
-    "INSERT INTO users (id, email, name, password_hash, plan, created_at) VALUES (?, ?, ?, ?, ?, ?)",
-    [user.id, user.email, user.name, await hashPassword(password), user.plan, user.createdAt],
+    "INSERT INTO users (id, email, name, password_hash, created_at) VALUES (?, ?, ?, ?, ?)",
+    [user.id, user.email, user.name, await hashPassword(password), user.createdAt],
   );
   const token = await createSession(user.id);
   return json({ admin: publicUser(user) }, 201, { "set-cookie": sessionCookie(token) });

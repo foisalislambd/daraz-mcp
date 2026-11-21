@@ -2,7 +2,7 @@ import { randomBytes } from "node:crypto";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { safeEqual, sha256Hex } from "@daraz-mcp/client";
 import { handleMcpHttp, type ShopConnection } from "@daraz-mcp/mcp-server";
-import { assertWithinPlan, getDb, open, seal } from "./db.ts";
+import { getDb, open, seal } from "./db.ts";
 
 export async function handleHostedMcp(req: IncomingMessage, res: ServerResponse): Promise<void> {
   const header = req.headers.authorization || "";
@@ -26,13 +26,6 @@ export async function handleHostedMcp(req: IncomingMessage, res: ServerResponse)
   if (!safeEqual(presentedPrefix, String(key.prefix))) {
     res.writeHead(401, { "content-type": "application/json" });
     res.end(JSON.stringify({ error: "Invalid API key" }));
-    return;
-  }
-  try {
-    await assertWithinPlan(String(key.user_id), "calls");
-  } catch (error) {
-    res.writeHead(402, { "content-type": "application/json" });
-    res.end(JSON.stringify({ error: error instanceof Error ? error.message : "Plan limit" }));
     return;
   }
   const rows = await db.all("SELECT * FROM shops WHERE user_id = ? AND status = ?", [

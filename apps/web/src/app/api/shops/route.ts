@@ -1,6 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { buildAuthorizeUrl, isRegionCode } from "@daraz-mcp/client";
-import { assertWithinPlan, getDb, seal } from "@/server/db";
+import { getDb, seal } from "@/server/db";
 import { json, userFromRequest } from "@/server/session";
 
 export const dynamic = "force-dynamic";
@@ -48,11 +48,6 @@ export async function POST(request: Request) {
   const appSecret = platform ? process.env.DARAZ_APP_SECRET! : body?.appSecret?.trim() || "";
   if (!appKey || !appSecret) {
     return json({ error: "Enter the Daraz app key and secret, or configure the platform app." }, 400);
-  }
-  try {
-    await assertWithinPlan(user.id, "shops");
-  } catch (error) {
-    return json({ error: error instanceof Error ? error.message : "Plan limit" }, 402);
   }
   const state = randomBytes(16).toString("hex");
   const db = await getDb();

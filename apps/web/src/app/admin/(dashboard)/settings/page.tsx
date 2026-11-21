@@ -50,10 +50,6 @@ export default function SettingsPage() {
           <input className={inputClass} value={admin?.email || ""} disabled />
         </div>
         <div>
-          <label className="mb-1.5 block text-sm font-medium">Plan</label>
-          <input className={inputClass} value={admin?.role || ""} disabled />
-        </div>
-        <div>
           <label className="mb-1.5 block text-sm font-medium">Current password</label>
           <input className={inputClass} type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} />
         </div>

@@ -5,6 +5,7 @@ export const AI_SETUP_PROMPT = `# Set up Daraz MCP for me
 You are helping me connect a Daraz seller shop to an AI client through the daraz-mcp project.
 Repository: https://github.com/foisalislambd/daraz-mcp
 This project is not affiliated with Daraz or Alibaba.
+Daraz MCP is free. There are no plans, prices, or usage caps.
 
 Do not invent API paths, hosts, or secrets. Do not write secrets into git, chat logs, or screenshots. Ask me to paste an app key, app secret, or API key only when a step needs it, and never echo the secret back in full.
 

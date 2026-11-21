@@ -17,7 +17,6 @@ export async function POST(request: Request) {
     id: String(row.id),
     email: String(row.email),
     name: String(row.name),
-    plan: String(row.plan),
     createdAt: Number(row.created_at),
   };
   const token = await createSession(user.id);

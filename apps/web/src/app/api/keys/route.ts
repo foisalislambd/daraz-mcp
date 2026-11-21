@@ -1,6 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { sha256Hex } from "@daraz-mcp/client";
-import { assertWithinPlan, getDb } from "@/server/db";
+import { getDb } from "@/server/db";
 import { json, userFromRequest } from "@/server/session";
 
 export const dynamic = "force-dynamic";
@@ -32,11 +32,6 @@ export async function POST(request: Request) {
   if (!user) return json({ error: "Unauthorized" }, 401);
   const body = (await request.json().catch(() => null)) as { name?: string; rotateId?: string } | null;
   const name = body?.name?.trim() || "API key";
-  try {
-    await assertWithinPlan(user.id, "keys");
-  } catch (error) {
-    return json({ error: error instanceof Error ? error.message : "Plan limit" }, 402);
-  }
   const db = await getDb();
   if (body?.rotateId) {
     await db.run("UPDATE api_keys SET revoked_at = ? WHERE id = ? AND user_id = ? AND revoked_at IS NULL", [

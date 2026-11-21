@@ -9,7 +9,6 @@ export interface SessionUser {
   id: string;
   email: string;
   name: string;
-  plan: string;
   createdAt: number;
 }
 
@@ -46,7 +45,7 @@ export async function userFromRequest(request: Request): Promise<SessionUser | u
   const token = decodeURIComponent(match.slice(COOKIE.length + 1));
   const db = await getDb();
   const row = await db.get(
-    `SELECT users.id, users.email, users.name, users.plan, users.created_at
+    `SELECT users.id, users.email, users.name, users.created_at
      FROM sessions JOIN users ON users.id = sessions.user_id
      WHERE sessions.token_hash = ? AND sessions.expires_at > ?`,
     [sha256Hex(token), Date.now()],
@@ -56,7 +55,6 @@ export async function userFromRequest(request: Request): Promise<SessionUser | u
     id: String(row.id),
     email: String(row.email),
     name: String(row.name),
-    plan: String(row.plan),
     createdAt: Number(row.created_at),
   };
 }
@@ -73,7 +71,7 @@ export function publicUser(user: SessionUser) {
     id: user.id,
     username: user.name,
     email: user.email,
-    role: user.plan,
+    role: "seller",
     lastLoginAt: new Date().toISOString(),
     createdAt: new Date(user.createdAt).toISOString(),
   };
