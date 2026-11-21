@@ -74,16 +74,7 @@ export default function AdminDashboardPage() {
   return (
     <div className="admin-content space-y-5">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-gray-900 dark:text-white">Shop overview</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            {data.source === "sample"
-              ? "Sample snapshot for this demo account. It is not a live response from Daraz."
-              : data.source === "empty"
-                ? "Connect a Daraz shop to fill sales, orders, and stock."
-                : "Saved shop snapshot."}
-          </p>
-        </div>
+        <h1 className="text-xl font-semibold text-gray-900 dark:text-white">Shop overview</h1>
         <span className="admin-chip w-fit">{data.shops.length} shop{data.shops.length === 1 ? "" : "s"}</span>
       </div>
 

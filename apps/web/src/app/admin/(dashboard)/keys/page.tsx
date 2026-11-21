@@ -76,10 +76,7 @@ export default function KeysPage() {
 
   return (
     <div className="admin-content space-y-5">
-      <div>
-        <h1 className="text-xl font-semibold text-gray-900 dark:text-white">API keys and MCP URL</h1>
-        <p className="mt-1 text-sm text-gray-500">Point Claude, Cursor, or VS Code at this URL with a bearer key.</p>
-      </div>
+      <h1 className="text-xl font-semibold text-gray-900 dark:text-white">API keys and MCP URL</h1>
       <div className="admin-card admin-card-body">
         <p className="text-xs font-medium tracking-wide text-gray-500 uppercase">MCP URL</p>
         <div className="mt-2 flex flex-col gap-2 sm:flex-row">

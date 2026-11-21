@@ -15,8 +15,6 @@ type Log = {
 
 export default function UsagePage() {
   const [logs, setLogs] = useState<Log[] | null>(null);
-  const [used, setUsed] = useState(0);
-  const [limit, setLimit] = useState(0);
   const [tool, setTool] = useState("");
   const [status, setStatus] = useState("");
 
@@ -28,8 +26,6 @@ export default function UsagePage() {
       .then((response) => response.json())
       .then((body) => {
         setLogs(body.logs);
-        setUsed(body.used);
-        setLimit(body.plan.monthlyCalls);
       });
   }, [tool, status]);
 
@@ -38,12 +34,7 @@ export default function UsagePage() {
   return (
     <div className="admin-content space-y-5">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-gray-900 dark:text-white">Usage</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            {used.toLocaleString()} of {limit.toLocaleString()} calls this month.
-          </p>
-        </div>
+        <h1 className="text-xl font-semibold text-gray-900 dark:text-white">Usage</h1>
         <div className="flex gap-2">
           <input
             placeholder="Tool name"

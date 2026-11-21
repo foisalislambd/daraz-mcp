@@ -30,12 +30,7 @@ export default function BillingPage() {
 
   return (
     <div className="admin-content space-y-5">
-      <div>
-        <h1 className="text-xl font-semibold text-gray-900 dark:text-white">Billing</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Limits are enforced. Card checkout is not connected yet, so upgrades stay disabled.
-        </p>
-      </div>
+      <h1 className="text-xl font-semibold text-gray-900 dark:text-white">Billing</h1>
       <div className="grid gap-4 md:grid-cols-3">
         {FALLBACK.map((plan) => {
           const active = plan.id === current;
