@@ -1,0 +1,116 @@
+"use client";
+
+import { useAdminAuth } from "@/components/admin/auth/admin-auth-provider";
+import { adminConfig } from "@/config/admin.config";
+import { ArrowLeft, Eye, EyeOff, Lock, Mail } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+
+const inputClass =
+  "h-11 w-full rounded-lg border border-gray-200 bg-white pl-10 pr-4 text-sm text-gray-900 shadow-sm transition placeholder:text-gray-400 focus:border-brand-400 focus:ring-2 focus:ring-brand-500/20 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white";
+
+export function AdminLoginForm() {
+  const { login } = useAdminAuth();
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setSubmitting(true);
+    setError(null);
+    try {
+      await login(email.trim(), password);
+      router.replace("/admin");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not sign in");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <div className="flex min-h-dvh flex-col justify-center px-5 py-10 sm:px-10 lg:px-14 xl:px-16">
+      <div className="mx-auto w-full max-w-[400px]">
+        <Link
+          href={adminConfig.brand.siteUrl}
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 transition-colors hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to site
+        </Link>
+        <div className="mt-8 lg:mt-10">
+          <div className="mb-6 flex h-11 w-11 items-center justify-center rounded-xl bg-brand-500 text-base font-bold text-white lg:hidden">
+            {adminConfig.brand.letter}
+          </div>
+          <h1 className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white sm:text-[1.75rem]">
+            Sign in
+          </h1>
+          <p className="mt-2 text-sm text-gray-500">Use the email you signed up with.</p>
+        </div>
+        <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+          <div>
+            <label htmlFor="admin-email" className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Email
+            </label>
+            <div className="relative">
+              <Mail className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              <input
+                id="admin-email"
+                type="email"
+                autoComplete="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className={inputClass}
+              />
+            </div>
+          </div>
+          <div>
+            <label htmlFor="admin-password" className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Password
+            </label>
+            <div className="relative">
+              <Lock className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              <input
+                id="admin-password"
+                type={showPassword ? "text" : "password"}
+                autoComplete="current-password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className={`${inputClass} pr-11`}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                className="absolute top-1/2 right-3 -translate-y-1/2 rounded-md p-0.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-white/10"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+          </div>
+          {error && <p className="text-sm text-error-500">{error}</p>}
+          <button
+            type="submit"
+            disabled={submitting}
+            className="flex h-11 w-full items-center justify-center rounded-lg bg-brand-500 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-600 disabled:opacity-60"
+          >
+            {submitting ? "Signing in…" : "Sign in to dashboard"}
+          </button>
+        </form>
+        <p className="mt-6 text-sm text-gray-500">
+          New seller?{" "}
+          <Link href="/admin/signup" className="font-medium text-brand-600 hover:text-brand-700">
+            Create an account
+          </Link>
+        </p>
+      </div>
+    </div>
+  );
+}

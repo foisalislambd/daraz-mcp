@@ -1,0 +1,38 @@
+{
+  "name": "daraz-mcp-platform",
+  "private": true,
+  "type": "module",
+  "version": "0.1.0",
+  "description": "Daraz seller MCP platform: typed Open API client, MCP server, CLI, and hosted admin.",
+  "license": "MIT",
+  "packageManager": "pnpm@10.15.1",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "better-sqlite3",
+      "esbuild"
+    ]
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "dev:web": "pnpm --filter @daraz-mcp/web dev",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.25.1",
+    "@types/node": "^20.19.43",
+    "eslint": "^9.25.1",
+    "prettier": "^3.5.3",
+    "turbo": "^2.5.4",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.31.0",
+    "vitest": "^3.1.4"
+  }
+}

@@ -1,0 +1,25 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: daraz
+      POSTGRES_PASSWORD: daraz
+      POSTGRES_DB: daraz
+    ports:
+      - "5432:5432"
+    volumes:
+      - daraz-pg:/var/lib/postgresql/data
+  web:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgres://daraz:daraz@postgres:5432/daraz
+      PUBLIC_APP_URL: http://localhost:3000
+      TOKEN_ENCRYPTION_KEY: ${TOKEN_ENCRYPTION_KEY:-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=}
+      DARAZ_APP_KEY: ${DARAZ_APP_KEY:-}
+      DARAZ_APP_SECRET: ${DARAZ_APP_SECRET:-}
+    depends_on:
+      - postgres
+volumes:
+  daraz-pg:
