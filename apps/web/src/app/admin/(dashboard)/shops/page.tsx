@@ -23,6 +23,7 @@ export default function ShopsPage() {
   const [region, setRegion] = useState("BD");
   const [appKey, setAppKey] = useState("");
   const [appSecret, setAppSecret] = useState("");
+  const [redirectUri, setRedirectUri] = useState("");
 
   async function load() {
     const response = await fetch("/api/shops");
@@ -38,6 +39,7 @@ export default function ShopsPage() {
       .then((body) => {
         setShops(body.shops);
         setPlatform(Boolean(body.platformAppConfigured));
+        if (body.redirectUri) setRedirectUri(String(body.redirectUri));
         if (params.get("connected")) setNotice("Shop connected.");
         if (params.get("error")) {
           setError("Daraz authorization did not finish. Check the redirect URI registered on the app.");
@@ -73,6 +75,20 @@ export default function ShopsPage() {
   return (
     <div className="admin-content space-y-5">
       <h1 className="text-xl font-semibold text-gray-900 dark:text-white">Shops</h1>
+      <ol className="admin-card admin-card-body list-decimal space-y-2 pl-5 text-sm text-gray-600 dark:text-gray-300">
+        <li>Create an app at open.daraz.com and copy the app key and secret.</li>
+        <li>
+          Register this callback on the app
+          {redirectUri ? (
+            <>
+              : <code className="text-gray-900 dark:text-white">{redirectUri}</code>
+            </>
+          ) : (
+            " before you connect."
+          )}
+        </li>
+        <li>Choose the Daraz country, then Connect Daraz and approve the seller login.</li>
+      </ol>
       {notice && <p className="text-sm text-success-600">{notice}</p>}
       {error && <p className="text-sm text-error-500">{error}</p>}
 
@@ -130,7 +146,7 @@ export default function ShopsPage() {
             {shops.length === 0 && (
               <tr>
                 <td className="px-4 py-6 text-gray-500" colSpan={5}>
-                  No shops yet.
+                  No shops yet. Finish the three steps above. Each country is a separate seller login.
                 </td>
               </tr>
             )}

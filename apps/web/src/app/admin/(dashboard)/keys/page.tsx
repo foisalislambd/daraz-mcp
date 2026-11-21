@@ -1,5 +1,6 @@
 "use client";
 
+import { CopyForAiButton } from "@/components/admin/ui/copy-for-ai-button";
 import { AdminLoading } from "@/components/admin/ui/admin-loading";
 import { FormEvent, useEffect, useState } from "react";
 
@@ -76,7 +77,10 @@ export default function KeysPage() {
 
   return (
     <div className="admin-content space-y-5">
-      <h1 className="text-xl font-semibold text-gray-900 dark:text-white">API keys and MCP URL</h1>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-xl font-semibold text-gray-900 dark:text-white">API keys and MCP URL</h1>
+        <CopyForAiButton mcpUrl={mcpUrl} />
+      </div>
       <div className="admin-card admin-card-body">
         <p className="text-xs font-medium tracking-wide text-gray-500 uppercase">MCP URL</p>
         <div className="mt-2 flex flex-col gap-2 sm:flex-row">
@@ -125,6 +129,13 @@ export default function KeysPage() {
             </tr>
           </thead>
           <tbody>
+            {keys.length === 0 && (
+              <tr>
+                <td className="px-4 py-6 text-gray-500" colSpan={5}>
+                  No keys yet. Create one, copy it once, then use Copy for AI. The prompt includes your MCP URL and never includes the key.
+                </td>
+              </tr>
+            )}
             {keys.map((key) => (
               <tr key={key.id} className="border-t border-gray-100 dark:border-gray-800">
                 <td className="px-4 py-3 font-medium">{key.name}</td>

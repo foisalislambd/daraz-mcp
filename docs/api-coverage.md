@@ -46,7 +46,9 @@ Authorize samples from the Daraz seller-authorization document:
 
 Query: `response_type=code`, `force_auth=true`, `redirect_uri`, `client_id` = app key.
 
-`/auth/token/create` and `/auth/token/refresh` are what the working clients call on the venture REST host. Some other integrations use `https://auth.daraz.com`. That central host is optional (`host: "central"`) and was not in the official sample links we read.
+`/auth/token/create` and `/auth/token/refresh` are what the working clients call on the venture REST host. Some other integrations use `https://auth.daraz.com`. That central host is optional (`host: "central"`) and was not in the official sample links we read. Do not use it unless you have confirmed it for your app.
+
+All five countries (BD, PK, LK, NP, MM) use the REST and authorize hosts in the tables above, including Myanmar on `api.shop.com.mm`. Those hosts come from the CreateProduct service-endpoint table and the seller-authorization samples. The client tests lock each host, currency, and timezone. Live seller login for every country was not exercised from this repository.
 
 ## Working client paths
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { CopyForAiButton } from "@/components/admin/ui/copy-for-ai-button";
 import { useEffect, useState } from "react";
 
 function block(mcpUrl: string, style: "claude" | "vscode") {
@@ -58,7 +59,10 @@ export default function SetupPage() {
 
   return (
     <div className="admin-content space-y-5">
-      <h1 className="text-xl font-semibold text-gray-900 dark:text-white">Client setup</h1>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-xl font-semibold text-gray-900 dark:text-white">Client setup</h1>
+        <CopyForAiButton mcpUrl={mcpUrl} />
+      </div>
       <div className="grid gap-4 lg:grid-cols-2">
         {cards.map((card) => (
           <div key={card.id} className="admin-card admin-card-body">

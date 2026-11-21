@@ -2,7 +2,7 @@ import { createServer } from "node:http";
 import { createInterface } from "node:readline/promises";
 import { stdin, stdout } from "node:process";
 import { spawn } from "node:child_process";
-import { buildAuthorizeUrl, createDaraz, isRegionCode, type RegionCode } from "@daraz-mcp/client";
+import { buildAuthorizeUrl, createDaraz, getRegion, isRegionCode, REGION_CODES, type RegionCode } from "@daraz-mcp/client";
 import { configInstructions } from "./configs.js";
 import { upsertShop, type StoredShop } from "./store.js";
 
@@ -52,32 +52,55 @@ function waitForCode(port: number, expectedState: string): Promise<string> {
       resolve(code);
     });
     server.listen(port, "127.0.0.1");
-    server.on("error", reject);
+    server.on("error", (error: NodeJS.ErrnoException) => {
+      if (error.code === "EADDRINUSE") {
+        reject(new Error("Port 8787 is already in use. Stop the other setup window and run this again."));
+        return;
+      }
+      reject(error);
+    });
   });
 }
 
 export async function runSetup(dir?: string): Promise<void> {
-  stdout.write("Daraz MCP setup\nThis stores tokens encrypted under your config directory (mode 0600).\n\n");
-  const regionInput = (await ask("Region (BD, PK, LK, NP, MM)", "BD")).toUpperCase();
-  if (!isRegionCode(regionInput)) throw new Error("Unknown region.");
-  const region: RegionCode = regionInput;
-  const appKey = await ask("Daraz app key");
-  const appSecret = await ask("Daraz app secret");
-  const label = await ask("Shop label", `${region} shop`);
-  if (!appKey || !appSecret) throw new Error("App key and secret are required.");
-
   const port = 8787;
-  const redirectUri = await ask("OAuth redirect URI", `http://127.0.0.1:${port}/callback`);
+  const redirectUri = `http://127.0.0.1:${port}/callback`;
+  stdout.write(
+    [
+      "Daraz MCP setup",
+      "Tokens are encrypted in ~/.config/daraz-mcp (or DARAZ_MCP_HOME). Files are mode 0600.",
+      `Register this callback on the Daraz app before you continue: ${redirectUri}`,
+      `Countries: ${REGION_CODES.join(", ")}. Press Enter to use Bangladesh (BD).`,
+      "",
+    ].join("\n"),
+  );
+  const regionInput = (await ask("Country code", "BD")).toUpperCase();
+  if (!isRegionCode(regionInput)) {
+    throw new Error(`Unknown country "${regionInput}". Use one of ${REGION_CODES.join(", ")}.`);
+  }
+  const region: RegionCode = regionInput;
+  const country = getRegion(region);
+  const appKey = await ask("Daraz app key from open.daraz.com");
+  if (!appKey) throw new Error("The app key is required. Create an app at https://open.daraz.com/ and paste the key.");
+  const appSecret = await ask("Daraz app secret");
+  if (!appSecret) throw new Error("The app secret is required. It is encrypted on disk and is not printed again.");
+  const label = await ask("Shop label", `${country.name} shop`);
   const state = Math.random().toString(36).slice(2);
   const url = buildAuthorizeUrl({ region, appKey, redirectUri, state });
-  stdout.write(`\nApprove the app in your browser. If it does not open, visit:\n${url}\n\n`);
+  stdout.write(
+    `\nOpening ${country.name} seller login (${country.authorizeBase}).\nIf the browser does not open, visit:\n${url}\n\n`,
+  );
   const pending = waitForCode(port, state);
   openBrowser(url);
   const code = await pending;
   const api = createDaraz({ region, appKey, appSecret });
   const token = await api.client.createToken(code);
   const accessToken = String(token.access_token || "");
-  if (!accessToken) throw new Error("Daraz did not return an access token.");
+  if (!accessToken) {
+    throw new Error(
+      "Daraz did not return an access token. Check the app key, secret, and that the callback URL matches the app.",
+    );
+  }
   const sellerId =
     Array.isArray(token.country_user_info) && token.country_user_info[0]
       ? String((token.country_user_info[0] as { seller_id?: string }).seller_id || "")

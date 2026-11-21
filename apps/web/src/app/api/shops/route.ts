@@ -13,7 +13,9 @@ export async function GET(request: Request) {
     "SELECT id, label, region, seller_id, status, created_at, uses_platform_app FROM shops WHERE user_id = ? ORDER BY created_at DESC",
     [user.id],
   );
+  const origin = (process.env.PUBLIC_APP_URL || new URL(request.url).origin).replace(/\/$/, "");
   return json({
+    redirectUri: `${origin}/api/daraz/callback`,
     shops: rows.map((row) => ({
       id: row.id,
       label: row.label,
